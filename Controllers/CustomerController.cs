@@ -134,5 +134,95 @@ namespace InsuranceWebAPI.Controllers
             return Ok(data);
 
         }
+
+        /// <summary>
+        /// Buy Insurance Post Method based on user_id
+        /// </summary>
+        /// <param name="vehicle"></param>
+        /// <returns>200Ok response with vehicle_registration_number for further processing</returns>
+        [HttpPost]
+        [Route("BuyInsurance/{user_id}")]
+        public IActionResult PostVehicle(Vehicle vehicle)
+        {
+            try
+            {
+                db.Vehicles.Add(vehicle);
+                db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            return Ok(vehicle.RegistrationNumber);
+
+        }
+
+
+        /// <summary>
+        /// Gets Policy  based on plan and ve
+        /// </summary>
+        /// <param name="plan1"></param>
+        /// <param name="reg_no"></param>
+        /// <returns>Policy with 200 response</returns>
+        [HttpGet]
+        [Route("BuyInsurance/{user_id}/{reg_no}")]
+
+        public IActionResult GetPolicy(Plan plan1, string reg_no)
+        {
+
+            Plan resPlan = new Plan();
+            try
+            {
+                var vehicle = db.Vehicles.Where(v => v.RegistrationNumber == reg_no).FirstOrDefault();
+                if (vehicle != null)
+                {
+                    string tp = plan1.Typeofvehicle;
+                    resPlan = db.Plans.Where(p => (p.Term == plan1.Term) &&
+                    (p.Type == plan1.Type) && (p.Typeofvehicle == tp)).FirstOrDefault();
+                }
+                else
+                {
+                    return BadRequest("vehicle not found");
+                }
+                //    pid = from p in db.Plans
+                //          where (p.Duration == plan1.Duration) && (p.Type == plan1.Type)
+                //&& p.Id == 6  select p.Id;
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            return Ok(resPlan);
+        }
+
+
+        [HttpPost]
+        [Route("BuyInsurance/{user_id}/{reg_no}/{plan_id}")]
+        public IActionResult PostPolicy(int user_id, string reg_no, int plan_id, DateTime insurancePurchaseDate)
+        {
+            try
+            {
+
+                var plan = db.Plans.Where(p => p.Id == plan_id).FirstOrDefault();
+                Policy policy = new Policy();
+                policy.UserId = user_id;
+                policy.RegistrationNumber = reg_no;
+                policy.PlansId = plan_id;
+                policy.PurchaseDate = insurancePurchaseDate;
+                policy.RenewAmount = plan.Amount;
+                policy.ClaimId = null;
+
+                db.Policies.Add(policy);
+                db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            return Ok("Policy table inserted");
+        }
+
+
     }
 }
