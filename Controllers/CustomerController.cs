@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using InsuranceWebAPI.Models;
+using Newtonsoft.Json.Linq;
 
 namespace InsuranceWebAPI.Controllers
 {
@@ -62,13 +63,14 @@ namespace InsuranceWebAPI.Controllers
         /// </summary>
         /// <param name="CustIdPass"></param>
         /// <returns>if successfull -> 200 Ok response else 400 Bad Request Response</returns>
-        [HttpPost]
-        [Route("Login")]
-        public IActionResult LoginCustomer(dynamic CustIdPass) 
+        [HttpGet]
+        [Route("Login/{email}")]
+        public IActionResult LoginCustomer( string password,string email) 
         {
-            string email = CustIdPass.email;
-            string password = CustIdPass.password;
+
+            //string password = CustIdPass.password;
             //find customer with that email
+            //string email = Request.Query["value"];
             var cust = db.Customers.Where(o => o.Email == email).FirstOrDefault();
 
             if (cust == null)
@@ -107,6 +109,30 @@ namespace InsuranceWebAPI.Controllers
             }
             return Ok(data);
             
+        }
+
+        /// <summary>
+        /// Get Customer with particular id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Customer Object if successful else 404 Not found response</returns>
+
+        [HttpGet]
+        [Route("Get/{email}")]
+        public IActionResult GetCustomer(string? email)
+        {
+            if (email == null)
+            {
+                return BadRequest("Id can't be null...");
+            }
+
+            var data = from cust in db.Customers where cust.Email == email select cust;
+            if (data.Count() == 0)
+            {
+                return StatusCode(404, $"Customer {email} not present");
+            }
+            return Ok(data);
+
         }
     }
 }
