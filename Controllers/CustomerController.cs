@@ -228,7 +228,7 @@ namespace InsuranceWebAPI.Controllers
 
         //customer edit based on emailid
         [HttpPut]
-        [Route("Edit/{emailid")]
+        [Route("Edit/{emailid}")]
         public IActionResult editCustomer(string? emailid, Customer c)
         {
             if (emailid == null)
@@ -271,7 +271,7 @@ namespace InsuranceWebAPI.Controllers
          {
             //var data =  db.EmpDepts.FromSqlInterpolated<EmpDepartment>($"ShowEmp");
 
-            var data = db.ClaimPolicies.FromSqlInterpolated<ClaimPolicy>($"ShowClaimPolicy");
+            var data = db.ClaimPolicies.FromSqlInterpolated<ClaimPolicy>($"ShowClaimPolicyNotApproved");
 
 
 
@@ -280,7 +280,22 @@ namespace InsuranceWebAPI.Controllers
 
          }
 
-         
+
+            //CustomerVehiclePolicy
+        [HttpGet]
+        [Route("GetCustomerVehiclePolicy/{email_id}")]
+        public IActionResult getCustomerVehiclePolicy(string? email)
+        {
+            var data = db.CustomerVehiclePolicies.FromSqlInterpolated<CustomerVehiclePolicy>($"ShowCustomerVehiclePolicy {email}");
+
+
+
+
+            return Ok(data);
+
+        }
+
+
 
 
     }

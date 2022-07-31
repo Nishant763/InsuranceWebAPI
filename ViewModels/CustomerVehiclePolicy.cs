@@ -7,15 +7,24 @@ using System.ComponentModel.DataAnnotations;
 namespace InsuranceWebAPI.ViewModels
 {
     //get,
-    
+
     public class CustomerVehiclePolicy
     {
         //policy_no,v_model,r_no,amount,email
-       // [Key]
-        public int Id;
-        public string Model;
-        public string RegistrationNumber;
-         public decimal RenewAmount;
-         public string Email;
+        // [Key]
+        public int PolicyNo  {get;set;}
+        public string Model { get; set; }
+        public string RegistrationNumber
+        {
+            get; set;
+         }
+         public decimal RenewAmount
+        {
+            get; set;
+        }
+         public string Email
+        {
+            get; set;
+         }
     }
 }

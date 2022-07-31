@@ -13,10 +13,11 @@ namespace InsuranceWebAPI.ViewModels
         //Policy -> amount
 
         [Key]
-        public int Id;
+        public int Id { get; set; }
 
-        public DateTime ClaimDate;
-        public bool? Isapproved;
-        public decimal RenewAmount;
+        public DateTime claim_date { get; set; }
+        public bool? isapproved { get; set; }
+        public decimal renew_amount{ get; set; }
+        public string email{ get; set; }
     }
 }
