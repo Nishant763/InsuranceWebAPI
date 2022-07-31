@@ -19,7 +19,6 @@ namespace InsuranceWebAPI.Models
         public string Address { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public string Password { get; set; }
-        public string Typeofvehicle { get; set; }
 
         public virtual ICollection<Policy> Policies { get; set; }
     }

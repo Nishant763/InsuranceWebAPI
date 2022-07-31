@@ -7,15 +7,11 @@ namespace InsuranceWebAPI.Models
 {
     public partial class Claim
     {
-        public Claim()
-        {
-            Policies = new HashSet<Policy>();
-        }
-
         public int Id { get; set; }
         public DateTime ClaimDate { get; set; }
         public bool? Isapproved { get; set; }
+        public int? PolicyId { get; set; }
 
-        public virtual ICollection<Policy> Policies { get; set; }
+        public virtual Policy Policy { get; set; }
     }
 }

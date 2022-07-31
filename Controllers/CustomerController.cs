@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using InsuranceWebAPI.Models;
 using Newtonsoft.Json.Linq;
+using Microsoft.EntityFrameworkCore;
+using InsuranceWebAPI.ViewModels;
 
 namespace InsuranceWebAPI.Controllers
 {
@@ -211,7 +213,7 @@ namespace InsuranceWebAPI.Controllers
                 policy.PlansId = plan_id;
                 policy.PurchaseDate = insurancePurchaseDate;
                 policy.RenewAmount = plan.Amount;
-                policy.ClaimId = null;
+                //policy.ClaimId = null;
 
                 db.Policies.Add(policy);
                 db.SaveChanges();
@@ -222,6 +224,63 @@ namespace InsuranceWebAPI.Controllers
             }
             return Ok("Policy table inserted");
         }
+
+
+        //customer edit based on emailid
+        [HttpPut]
+        [Route("Edit/{emailid")]
+        public IActionResult editCustomer(string? emailid, Customer c)
+        {
+            if (emailid == null)
+            {
+                return BadRequest("Email id is null..");
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    Customer actual = (from cust in db.Customers where cust.Email == emailid select cust).FirstOrDefault();
+                    actual.Email = c.Email;
+                    actual.Address = c.Address;
+                    actual.ContactNumber = c.ContactNumber;
+                    actual.DateOfBirth = c.DateOfBirth;
+                    actual.Name = c.Name;
+                    actual.Password = c.Password;
+                    actual.Policies = c.Policies;
+                    db.SaveChanges();
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest($"Exception....{ex.InnerException.Message}");
+                }
+            }
+
+            return BadRequest("Something went wrong.....");
+
+        }
+
+
+
+        //CLaimPolicyModel
+
+         [HttpGet]
+         [Route("GetClaimPolicy")]
+
+         public IActionResult getClaimPolicy()
+         {
+            //var data =  db.EmpDepts.FromSqlInterpolated<EmpDepartment>($"ShowEmp");
+
+            var data = db.ClaimPolicies.FromSqlInterpolated<ClaimPolicy>($"ShowClaimPolicy");
+
+
+
+
+             return Ok(data);
+
+         }
+
+         
 
 
     }

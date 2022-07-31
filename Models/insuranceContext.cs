@@ -1,7 +1,8 @@
 ﻿using System;
+using InsuranceWebAPI.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using System.Linq;
+
 #nullable disable
 
 namespace InsuranceWebAPI.Models
@@ -23,12 +24,16 @@ namespace InsuranceWebAPI.Models
         public virtual DbSet<Policy> Policies { get; set; }
         public virtual DbSet<Vehicle> Vehicles { get; set; }
 
+        public virtual DbSet<ClaimPolicy> ClaimPolicies { get; set; }
+
+        public virtual DbSet<CustomerVehiclePolicy> CustomerVehiclePolicies { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Server=DESKTOP-O5TKHRQ;Database=insurance;Trusted_Connection=True;");
+                optionsBuilder.UseSqlServer("server=DESKTOP-O5TKHRQ;database=insurance;trusted_connection=true;");
             }
         }
 
@@ -49,6 +54,14 @@ namespace InsuranceWebAPI.Models
                 entity.Property(e => e.Isapproved)
                     .HasColumnName("isapproved")
                     .HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.PolicyId).HasColumnName("policy_id");
+
+                entity.HasOne(d => d.Policy)
+                    .WithMany(p => p.Claims)
+                    .HasForeignKey(d => d.PolicyId)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("fk_policy");
             });
 
             modelBuilder.Entity<Customer>(entity =>
@@ -93,12 +106,6 @@ namespace InsuranceWebAPI.Models
                     .IsRequired()
                     .IsUnicode(false)
                     .HasColumnName("password");
-
-                entity.Property(e => e.Typeofvehicle)
-                    .IsRequired()
-                    .HasMaxLength(10)
-                    .IsUnicode(false)
-                    .HasColumnName("typeofvehicle");
             });
 
             modelBuilder.Entity<Plan>(entity =>
@@ -132,8 +139,6 @@ namespace InsuranceWebAPI.Models
 
                 entity.Property(e => e.Id).HasColumnName("id");
 
-                entity.Property(e => e.ClaimId).HasColumnName("claim_id");
-
                 entity.Property(e => e.PlansId).HasColumnName("plans_id");
 
                 entity.Property(e => e.PurchaseDate)
@@ -150,12 +155,6 @@ namespace InsuranceWebAPI.Models
                     .HasColumnName("renew_amount");
 
                 entity.Property(e => e.UserId).HasColumnName("user_id");
-
-                object p = entity.HasOne(d => d.Claim)
-                    .WithMany(p => p.Policies)
-                    .HasForeignKey(d => d.ClaimId)
-                    .OnDelete(DeleteBehavior.SetNull)
-                    .HasConstraintName("fk_claim");
 
                 entity.HasOne(d => d.Plans)
                     .WithMany(p => p.Policies)
@@ -222,6 +221,11 @@ namespace InsuranceWebAPI.Models
                 entity.Property(e => e.PurchaseDate)
                     .HasColumnType("date")
                     .HasColumnName("purchase_date");
+
+                entity.Property(e => e.TypeOfVehicle)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasColumnName("typeOfVehicle");
             });
 
             OnModelCreatingPartial(modelBuilder);

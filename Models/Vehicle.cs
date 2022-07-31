@@ -19,6 +19,7 @@ namespace InsuranceWebAPI.Models
         public string RegistrationNumber { get; set; }
         public string EngineNumber { get; set; }
         public string ChassisNumber { get; set; }
+        public string TypeOfVehicle { get; set; }
 
         public virtual ICollection<Policy> Policies { get; set; }
     }
