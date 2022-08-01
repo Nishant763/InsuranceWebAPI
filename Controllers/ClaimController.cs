@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using InsuranceWebAPI.Models;
+using InsuranceWebAPI.ViewModels;
 
 namespace InsuranceWebAPI.Controllers
 {
@@ -72,5 +73,27 @@ namespace InsuranceWebAPI.Controllers
 
                
         }
+
+        //edit claim
+        [HttpPut]
+        [Route("Edit/{id}")]
+
+        public IActionResult editClaim(int id)
+        {
+            try
+            {
+                Claim old = new Claim();
+                 old = db.Claims.Find(id);
+                old.Isapproved = !old.Isapproved;
+                
+                db.SaveChanges();
+                return Ok(old);
+            }
+            catch(Exception ex)
+            {
+                return BadRequest($"{ex.InnerException.Message}");
+            }
+        }
+
     }
 }
