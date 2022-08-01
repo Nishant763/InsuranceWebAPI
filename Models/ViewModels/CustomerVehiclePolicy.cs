@@ -11,7 +11,7 @@ namespace InsuranceWebAPI.ViewModels
     public class CustomerVehiclePolicy
     {
         //policy_no,v_model,r_no,amount,email
-        // [Key]
+        [Key]
         public int PolicyNo  {get;set;}
         public string Model { get; set; }
         public string RegistrationNumber

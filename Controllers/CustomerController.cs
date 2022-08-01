@@ -66,7 +66,7 @@ namespace InsuranceWebAPI.Controllers
         /// <param name="CustIdPass"></param>
         /// <returns>if successfull -> 200 Ok response else 400 Bad Request Response</returns>
         [HttpGet]
-        [Route("Login/{email}")]
+        [Route("Login/{email}/{password}")]
         public IActionResult LoginCustomer( string password,string email) 
         {
 
@@ -83,7 +83,7 @@ namespace InsuranceWebAPI.Controllers
             //validate password
             if (cust.Password == password)
             {
-                return Ok("Logged in....");
+                return Ok();
             }
 
             return BadRequest("Invalid Password....");
@@ -143,19 +143,20 @@ namespace InsuranceWebAPI.Controllers
         /// <param name="vehicle"></param>
         /// <returns>200Ok response with vehicle_registration_number for further processing</returns>
         [HttpPost]
-        [Route("BuyInsurance/{user_id}")]
+        [Route("BuyInsurance/{email}")]
         public IActionResult PostVehicle(Vehicle vehicle)
         {
             try
             {
                 db.Vehicles.Add(vehicle);
                 db.SaveChanges();
+                return Ok();
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-            return Ok(vehicle.RegistrationNumber);
+         
 
         }
 
@@ -167,20 +168,22 @@ namespace InsuranceWebAPI.Controllers
         /// <param name="reg_no"></param>
         /// <returns>Policy with 200 response</returns>
         [HttpGet]
-        [Route("BuyInsurance/{user_id}/{reg_no}")]
+        [Route("BuyInsurance/{reg_no}/{type}/{duration}")]
 
-        public IActionResult GetPolicy(Plan plan1, string reg_no)
+        public IActionResult GetPlan(string reg_no, string type, int duration)
         {
 
+           // planwithoutpolicies plan1 = new planwithoutpolicies();
             Plan resPlan = new Plan();
+
             try
             {
                 var vehicle = db.Vehicles.Where(v => v.RegistrationNumber == reg_no).FirstOrDefault();
                 if (vehicle != null)
                 {
-                    string tp = plan1.Typeofvehicle;
-                    resPlan = db.Plans.Where(p => (p.Term == plan1.Term) &&
-                    (p.Type == plan1.Type) && (p.Typeofvehicle == tp)).FirstOrDefault();
+                    string tp = vehicle.TypeOfVehicle;
+                    resPlan = db.Plans.Where(p => (p.Term == duration) &&
+                    (p.Type == type) && (p.Typeofvehicle == tp)).FirstOrDefault();
                 }
                 else
                 {
@@ -190,30 +193,41 @@ namespace InsuranceWebAPI.Controllers
                 //          where (p.Duration == plan1.Duration) && (p.Type == plan1.Type)
                 //&& p.Id == 6  select p.Id;
 
+                if (resPlan == null) return BadRequest("plan not found");
+
+
+                return Ok(resPlan);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-            return Ok(resPlan);
+           // plan1.Amount = resPlan.Amount;
+           // plan1.Duration = resPlan.Duration;
+            //plan1.Id = resPlan.Id;
+            //plan1.Typeofvehicle = resPlan.Typeofvehicle;
+            //plan1.Type = resPlan.Type;
+           
         }
 
 
         [HttpPost]
-        [Route("BuyInsurance/{user_id}/{reg_no}/{plan_id}")]
-        public IActionResult PostPolicy(int user_id, string reg_no, int plan_id, DateTime insurancePurchaseDate)
+        [Route("BuyInsurance/addpolicy/{email}/{reg_no}")]
+        public IActionResult PostPolicy(Plan plan, string email, string reg_no)
         {
             try
             {
 
-                var plan = db.Plans.Where(p => p.Id == plan_id).FirstOrDefault();
+                Customer customer = new Customer();
+
                 Policy policy = new Policy();
-                policy.UserId = user_id;
+                customer = db.Customers.Where(e => e.Email == email).FirstOrDefault();
+                policy.UserId = customer.Id;
                 policy.RegistrationNumber = reg_no;
-                policy.PlansId = plan_id;
-                policy.PurchaseDate = insurancePurchaseDate;
+                policy.PlansId = plan.Id;
+                policy.PurchaseDate = DateTime.Now;
                 policy.RenewAmount = plan.Amount;
-                //policy.ClaimId = null;
+                
 
                 db.Policies.Add(policy);
                 db.SaveChanges();
@@ -222,7 +236,7 @@ namespace InsuranceWebAPI.Controllers
             {
                 return BadRequest(ex.Message);
             }
-            return Ok("Policy table inserted");
+            return Ok();
         }
 
 
@@ -282,10 +296,12 @@ namespace InsuranceWebAPI.Controllers
 
 
             //CustomerVehiclePolicy
+            //To Do -> Stored procedure created but backend issue
         [HttpGet]
-        [Route("GetCustomerVehiclePolicy/{email_id}")]
-        public IActionResult getCustomerVehiclePolicy(string? email)
+        [Route("GetCustomerVehiclePolicy/{email}")]
+        public IActionResult getCustomerVehiclePolicy(string email)
         {
+            //CustomerVehiclePolicy d = new CustomerVehiclePolicy();
             var data = db.CustomerVehiclePolicies.FromSqlInterpolated<CustomerVehiclePolicy>($"ShowCustomerVehiclePolicy {email}");
 
 

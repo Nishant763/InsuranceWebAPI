@@ -47,24 +47,30 @@ namespace InsuranceWebAPI.Controllers
         [Route("Add")]
         public IActionResult addClaim(Claim c)
         {
-            try
-            {
-                if (ModelState.IsValid)
-                {
-                    db.Claims.Add(c);
-                    db.SaveChanges();
-                }
-                else
-                {
-                    return BadRequest($"Claim not validate");
-                }
+        
+               // if (ModelState.IsValid)
+                //{
+                    try
+                    {
+                        Claim c1 = new Claim();
+                        c1.ClaimDate = DateTime.Now;
+                        c1.Isapproved = c.Isapproved;
+                        c1.Policy = c.Policy;
+                        c1.PolicyId = c.PolicyId;
+                        
+                        db.Claims.Add(c1);
+                        db.SaveChanges();
+                        return Ok();
+                    }
+                    catch(Exception ex)
+                    {
+                        return BadRequest($"{ex.InnerException.Message}");
+                    }
+                //}
+                   // return BadRequest($"Claim not validate");
+                
 
-                return Created($"Claim added .....",c);
-            }
-            catch(Exception ex)
-            {
-                return BadRequest($"Exception occured .... {ex.Message}");
-            }
+               
         }
     }
 }
