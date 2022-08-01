@@ -28,7 +28,7 @@ namespace InsuranceWebAPI.Controllers
         [Route("ListCustomers")]
         public IActionResult GetCustomers()
         {
-            //var data = db.Departments.ToList();
+            
             var data = from cust in db.Customers select cust;
             return Ok(data);
 
@@ -162,7 +162,7 @@ namespace InsuranceWebAPI.Controllers
 
 
         /// <summary>
-        /// Gets Policy  based on plan and ve
+        /// Gets Policy  based on plan and registration_number
         /// </summary>
         /// <param name="plan1"></param>
         /// <param name="reg_no"></param>
@@ -210,7 +210,13 @@ namespace InsuranceWebAPI.Controllers
            
         }
 
-
+        /// <summary>
+        /// Adds policy in db based on email(user) and registration number(vehicle) 
+        /// </summary>
+        /// <param name="plan"></param>
+        /// <param name="email"></param>
+        /// <param name="reg_no"></param>
+        /// <returns></returns>
         [HttpPost]
         [Route("BuyInsurance/addpolicy/{email}/{reg_no}")]
         public IActionResult PostPolicy(Plan plan, string email, string reg_no)
@@ -231,16 +237,22 @@ namespace InsuranceWebAPI.Controllers
 
                 db.Policies.Add(policy);
                 db.SaveChanges();
+                return Ok();
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-            return Ok();
+       
         }
 
-
-        //customer edit based on emailid
+        /// <summary>
+        /// Edit Customer based on EmailId
+        /// </summary>
+        /// <param name="emailid"></param>
+        /// <param name="c"></param>
+        /// <returns></returns>
+        
         [HttpPut]
         [Route("Edit/{emailid}")]
         public IActionResult editCustomer(string? emailid, Customer c)
@@ -263,6 +275,7 @@ namespace InsuranceWebAPI.Controllers
                     actual.Password = c.Password;
                     actual.Policies = c.Policies;
                     db.SaveChanges();
+                    return Ok();
                 }
                 catch (Exception ex)
                 {
@@ -276,14 +289,18 @@ namespace InsuranceWebAPI.Controllers
 
 
 
-        //CLaimPolicyModel
+        /// <summary>
+        /// Fetches all the claim with policy details which are not approved by admin
+        /// </summary>
+        /// <returns>List of ClaimPolicy Objects</returns>
+        
 
          [HttpGet]
          [Route("GetClaimPolicy")]
 
          public IActionResult getClaimPolicy()
          {
-            //var data =  db.EmpDepts.FromSqlInterpolated<EmpDepartment>($"ShowEmp");
+            
 
             var data = db.ClaimPolicies.FromSqlInterpolated<ClaimPolicy>($"ShowClaimPolicyNotApproved");
 
@@ -295,13 +312,17 @@ namespace InsuranceWebAPI.Controllers
          }
 
 
-            //CustomerVehiclePolicy
-            //To Do -> Stored procedure created but backend issue
+            
+            /// <summary>
+            /// Fetches all the customer,vehicle,policy details of a particular user based on emailid
+            /// </summary>
+            /// <param name="email"></param>
+            /// <returns>CustomerVehiclePolicy Objects</returns>
         [HttpGet]
         [Route("GetCustomerVehiclePolicy/{email}")]
         public IActionResult getCustomerVehiclePolicy(string email)
         {
-            //CustomerVehiclePolicy d = new CustomerVehiclePolicy();
+           
             var data = db.CustomerVehiclePolicies.FromSqlInterpolated<CustomerVehiclePolicy>($"ShowCustomerVehiclePolicy {email}");
 
 
@@ -311,6 +332,140 @@ namespace InsuranceWebAPI.Controllers
 
         }
 
+
+
+
+        //--GetPlanForReview
+        [HttpGet]
+        [Route("RenewInsurance/{policy_id}/{type}/{duration}")]
+        public IActionResult GetPlanRenew(int policy_id, string type, int duration)
+        {
+
+            try
+            {
+                Policy policy = new Policy();
+                Vehicle vehicle = new Vehicle();
+                Plan plan = new Plan();
+
+                policy = db.Policies.Find(policy_id);
+                vehicle = db.Vehicles.Find(policy.RegistrationNumber);
+
+                if (vehicle != null)
+                {
+                    string tp = vehicle.TypeOfVehicle;
+                    plan = db.Plans.Where(p => (p.Term == duration) &&
+                    (p.Type == type) && (p.Typeofvehicle == tp)).FirstOrDefault();
+                }
+                else
+                {
+                    return BadRequest("vehicle not found");
+                }
+                //    pid = from p in db.Plans where (p.Duration == plan1.Duration) && (p.Type == plan1.Type) && p.Id == 6  select p.Id;
+
+                if (plan == null) return BadRequest("plan not found");
+                return Ok(plan);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+
+        }
+
+
+        //---RenewPolicy--
+        [HttpPost]
+        [Route("RenewInsurance/{policy_id}")]
+        public IActionResult RenewPolicy(Plan plan, int policy_id)
+        {
+
+            try
+            {
+                Policy policy = new Policy();
+                policy = db.Policies.Find(policy_id);
+
+                policy.PlansId = plan.Id;
+                policy.PurchaseDate = DateTime.Now;
+                policy.RenewAmount += plan.Amount;
+
+                db.SaveChanges();
+
+                return Ok();
+            }
+            catch (Exception Ex)
+            {
+
+                return BadRequest(Ex.Message);
+            }
+
+
+
+
+        }
+
+        /// <summary>
+        /// Reset Password User
+        /// </summary>
+        /// <param name="emailid"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+
+        [HttpPut]
+        [Route("Reset/{emailid}/{password}")]
+        public IActionResult ResetPass(string emailid, string password)
+        {
+            if (emailid == null && password == null)
+            {
+                return BadRequest("Email id is null..");
+            }
+            try
+            {
+                Customer old = new Customer();
+                old = db.Customers.Where(e => e.Email == emailid).FirstOrDefault();
+                old.Password = password;
+                db.SaveChanges();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Exception....{ex.InnerException.Message}");
+            }
+
+        }
+
+
+        /// <summary>
+        /// Calculation Estimate Vehicle
+        /// </summary>
+        /// <param name="typeofvehicle"></param>
+        /// <param name="type"></param>
+        /// <param name="duration"></param>
+        /// <returns></returns>
+
+        [HttpGet]
+        [Route("Calc/{typeofvehicle}/{type}/{duration}")]
+
+        public IActionResult GetPlanCalc(string typeofvehicle, string type, int duration)
+        {
+
+            try
+            {
+
+                Plan plan = new Plan();
+                plan = db.Plans.Where(p => (p.Term == duration) &&
+                 (p.Type == type) && (p.Typeofvehicle == typeofvehicle)).FirstOrDefault();
+
+                if (plan == null) return BadRequest("plan not found");
+                return Ok(plan);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+
+        }
 
 
 
