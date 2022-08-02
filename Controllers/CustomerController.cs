@@ -569,5 +569,39 @@ namespace InsuranceWebAPI.Controllers
 
         }
 
+
+        [HttpGet]
+        [Route("Validate/{policyId}/{contactNumber}/{email}")]
+
+        public IActionResult GetValidate(int policyId, string contactNumber, string email)
+        {
+            
+
+            Policy policy = new Policy();
+            policy = db.Policies.Find(policyId);
+            if (policy == null)
+            {
+                return BadRequest("No Policy with this policynumber! \n Enter Policy Number Correctly");
+            }
+
+
+            Customer customer = new Customer();
+            customer = db.Customers.Find(policy.UserId);
+
+            if (customer.Email != email)
+            {
+                return BadRequest("email is not matched! \n Enter email Correctly");
+            }
+
+            if (customer.ContactNumber != contactNumber)
+            {
+                return BadRequest("Contact number not matched! \n Enter Contact Number Correctly");
+            }
+
+            return Ok();
+
+        }
+
+        
     }
 }
