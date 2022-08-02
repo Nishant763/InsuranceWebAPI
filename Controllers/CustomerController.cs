@@ -95,7 +95,7 @@ namespace InsuranceWebAPI.Controllers
         /// <param name="id"></param>
         /// <returns>Customer Object if successful else 404 Not found response</returns>
 
-        [HttpGet]
+      /*  [HttpGet]
         [Route("Get/{id}")]
         public IActionResult GetCustomer(int? id)
         {
@@ -111,7 +111,7 @@ namespace InsuranceWebAPI.Controllers
             }
             return Ok(data);
             
-        }
+        }*/
 
         /// <summary>
         /// Get Customer with particular id
@@ -146,15 +146,58 @@ namespace InsuranceWebAPI.Controllers
         [Route("BuyInsurance/{email}")]
         public IActionResult PostVehicle(Vehicle vehicle)
         {
+            if (vehicle == null) { return BadRequest("data not recieved"); }
             try
             {
+
+                Vehicle vehicle1 = new Vehicle();
+
+                vehicle1 = db.Vehicles.Where(v => v.RegistrationNumber == vehicle.RegistrationNumber).FirstOrDefault();
+
+                if (vehicle1 != null)
+                {
+                    Policy policy = new Policy();
+                    policy = db.Policies.Where(p => p.RegistrationNumber == vehicle1.RegistrationNumber).FirstOrDefault();
+                    if (policy != null)
+                    {
+                        Plan plan = new Plan();
+                        plan = db.Plans.Where(p => p.Id == policy.PlansId).FirstOrDefault();
+
+                        if (( DateTime.Now - policy.PurchaseDate).Days > plan.Term * 365)
+                        {
+                            return BadRequest("Already we have policy with this Vehicle and Insurance Duration is Completed!!\n Please Renew it through RenewInsurance in Home");
+                        }
+                        else
+                        {
+                            return BadRequest("Hurray!!! Already we have policy with this Vehicle !! \n For Extension of duration you can renew through renew insurance in Home");
+                        }
+                    }
+                    else
+                    {
+                        return Ok();
+                    }
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 db.Vehicles.Add(vehicle);
                 db.SaveChanges();
                 return Ok();
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException.Message);
             }
          
 
@@ -184,6 +227,7 @@ namespace InsuranceWebAPI.Controllers
                     string tp = vehicle.TypeOfVehicle;
                     resPlan = db.Plans.Where(p => (p.Term == duration) &&
                     (p.Type == type) && (p.Typeofvehicle == tp)).FirstOrDefault();
+
                 }
                 else
                 {
@@ -194,7 +238,9 @@ namespace InsuranceWebAPI.Controllers
                 //&& p.Id == 6  select p.Id;
 
                 if (resPlan == null) return BadRequest("plan not found");
-
+                int days = (vehicle.PurchaseDate - DateTime.Now).Days;
+                int year = Math.Abs(days) / 365;
+                resPlan.Amount = amountAccordingToAge(resPlan.Amount, year);
 
                 return Ok(resPlan);
             }
@@ -233,7 +279,14 @@ namespace InsuranceWebAPI.Controllers
                 policy.PlansId = plan.Id;
                 policy.PurchaseDate = DateTime.Now;
                 policy.RenewAmount = plan.Amount;
-                
+
+                Vehicle vehicle = new Vehicle();
+                vehicle = db.Vehicles.Find(reg_no);
+
+                int days = (vehicle.PurchaseDate - DateTime.Now).Days;
+                days = Math.Abs(days);
+                int year = days / 365;
+                policy.RenewAmount = amountAccordingToAge(plan.Amount, year);
 
                 db.Policies.Add(policy);
                 db.SaveChanges();
@@ -363,11 +416,18 @@ namespace InsuranceWebAPI.Controllers
                 //    pid = from p in db.Plans where (p.Duration == plan1.Duration) && (p.Type == plan1.Type) && p.Id == 6  select p.Id;
 
                 if (plan == null) return BadRequest("plan not found");
+
+                //calculating age of vehicle
+                int days = (vehicle.PurchaseDate - DateTime.Now).Days;
+                days = Math.Abs(days);
+                int year = days / 365;
+                plan.Amount = amountAccordingToAge(plan.Amount, year);
+
                 return Ok(plan);
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.InnerException.Message);
             }
 
 
@@ -375,9 +435,9 @@ namespace InsuranceWebAPI.Controllers
 
 
         //---RenewPolicy--
-        [HttpPost]
+        [HttpPut]
         [Route("RenewInsurance/{policy_id}")]
-        public IActionResult RenewPolicy(Plan plan, int policy_id)
+        public IActionResult putPolicy( int policy_id,Plan plan)
         {
 
             try
@@ -385,18 +445,27 @@ namespace InsuranceWebAPI.Controllers
                 Policy policy = new Policy();
                 policy = db.Policies.Find(policy_id);
 
-                policy.PlansId = plan.Id;
+               policy.PlansId = plan.Id;
                 policy.PurchaseDate = DateTime.Now;
-                policy.RenewAmount += plan.Amount;
+               // policy.RenewAmount += plan.Amount;
+
+                Vehicle vehicle = new Vehicle();
+                vehicle = db.Vehicles.Find(policy.RegistrationNumber);
+
+                int days = (vehicle.PurchaseDate - DateTime.Now).Days;
+                days = Math.Abs(days);
+                int year = days / 365;
+                policy.RenewAmount += amountAccordingToAge(plan.Amount, year);
+               
 
                 db.SaveChanges();
 
-                return Ok();
+                return Ok(policy);
             }
             catch (Exception Ex)
             {
 
-                return BadRequest(Ex.Message);
+                return BadRequest(Ex.InnerException.Message);
             }
 
 
@@ -444,9 +513,9 @@ namespace InsuranceWebAPI.Controllers
         /// <returns></returns>
 
         [HttpGet]
-        [Route("Calc/{typeofvehicle}/{type}/{duration}")]
+        [Route("Calc/{typeofvehicle}/{type}/{duration}/{age}")]
 
-        public IActionResult GetPlanCalc(string typeofvehicle, string type, int duration)
+        public IActionResult GetPlanCalc(string typeofvehicle, string type, int duration,int age)
         {
 
             try
@@ -457,6 +526,9 @@ namespace InsuranceWebAPI.Controllers
                  (p.Type == type) && (p.Typeofvehicle == typeofvehicle)).FirstOrDefault();
 
                 if (plan == null) return BadRequest("plan not found");
+                
+
+                plan.Amount = amountAccordingToAge(plan.Amount, age);
                 return Ok(plan);
             }
             catch (Exception ex)
@@ -467,7 +539,35 @@ namespace InsuranceWebAPI.Controllers
 
         }
 
+        private decimal amountAccordingToAge(decimal planAmount, int Age)
+        {
 
+
+            if (Age < 3)
+            {
+                return planAmount;
+            }
+            else if (Age > 3 && Age < 5)
+            {
+                planAmount += (planAmount * 5) / 100;
+            }
+            else if (Age > 5 && Age < 10)
+            {
+                planAmount += (planAmount * 10) / 100;
+            }
+            else if (Age > 10 && Age < 20)
+            {
+                planAmount += (planAmount * 20) / 100;
+            }
+            else
+            {
+                planAmount += (planAmount * 30) / 100;
+
+            }
+
+            return planAmount;
+
+        }
 
     }
 }
